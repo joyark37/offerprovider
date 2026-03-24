@@ -4,7 +4,7 @@ import { join } from 'path'
 
 export async function GET() {
   try {
-    const data = readFileSync(join(process.cwd(), 'src/data/bitget-jobs.json'), 'utf-8')
+    const data = readFileSync(join(process.cwd(), 'src/data/jobs.json'), 'utf-8')
     const jobs = JSON.parse(data)
     return NextResponse.json(jobs)
   } catch (error) {

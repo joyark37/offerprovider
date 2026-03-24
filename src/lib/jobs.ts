@@ -17,7 +17,7 @@ export const jobs: Job[] = [
   {
     id: '1',
     title: 'Director, Licensing Control',
-    company: 'Bitget',
+    company: 'crypto top公司',
     location: 'Remote/Singapore',
     jobType: '全职',
     department: 'Legal & Compliance',
@@ -29,7 +29,7 @@ export const jobs: Job[] = [
   {
     id: '2',
     title: 'AI Marketing & Ecosystem Lead',
-    company: 'Bitget',
+    company: 'crypto top公司',
     location: 'Remote/Singapore',
     jobType: '全职',
     department: 'Operations',

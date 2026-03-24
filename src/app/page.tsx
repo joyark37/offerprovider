@@ -269,7 +269,7 @@ export default function Home() {
       <div className="max-w-4xl mx-auto">
         <header className="text-center mb-12">
           <h1 className="text-4xl font-bold text-gray-800 mb-2">
-            🎯 Bitget 招聘投递
+            🎯 热门岗位投递
           </h1>
           <p className="text-gray-600">
             选择你感兴趣的岗位，一键投递简历
