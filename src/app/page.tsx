@@ -40,7 +40,7 @@ export default function Home() {
   const [selectedCategory, setSelectedCategory] = useState('all')
   const [selectedLevel, setSelectedLevel] = useState('all')
   const [currentPage, setCurrentPage] = useState(1)
-  const ITEMS_PER_PAGE = 50
+  const ITEMS_PER_PAGE = 30
   
   const [formData, setFormData] = useState({
     name: '',
