@@ -1,65 +1,337 @@
-import Image from "next/image";
+'use client'
+
+import { useState, useEffect } from 'react'
+import { type Job } from '@/lib/types'
 
 export default function Home() {
-  return (
-    <div className="flex flex-col flex-1 items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex flex-1 w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.tsx file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
+  const [jobs, setJobs] = useState<Job[]>([])
+  const [loading, setLoading] = useState(true)
+  const [selectedJob, setSelectedJob] = useState<Job | null>(null)
+  const [submitted, setSubmitted] = useState(false)
+  const [submitting, setSubmitting] = useState(false)
+  const [formData, setFormData] = useState({
+    name: '',
+    email: '',
+    phone: '',
+    notes: ''
+  })
+  const [resumeFile, setResumeFile] = useState<File | null>(null)
+
+  useEffect(() => {
+    fetch('/api/jobs')
+      .then(res => res.json())
+      .then(data => {
+        if (Array.isArray(data)) {
+          setJobs(data)
+        }
+      })
+      .catch(console.error)
+      .finally(() => setLoading(false))
+  }, [])
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!selectedJob || !resumeFile) return
+
+    setSubmitting(true)
+    
+    try {
+      const reader = new FileReader()
+      const fileBase64 = await new Promise<string>((resolve, reject) => {
+        reader.onload = () => {
+          const result = reader.result as string
+          const base64 = result.split(',')[1]
+          resolve(base64)
+        }
+        reader.onerror = reject
+        reader.readAsDataURL(resumeFile)
+      })
+
+      const response = await fetch('/api/submit', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          ...formData,
+          jobId: selectedJob.id,
+          jobTitle: selectedJob.title,
+          jobCompany: selectedJob.company,
+          jobLink: selectedJob.link,
+          resumeBase64: fileBase64,
+          resumeName: resumeFile.name,
+          resumeType: resumeFile.type
+        })
+      })
+
+      if (response.ok) {
+        setSubmitted(true)
+      } else {
+        alert('提交失败，请重试')
+      }
+    } catch (error) {
+      console.error(error)
+      alert('提交失败，请重试')
+    } finally {
+      setSubmitting(false)
+    }
+  }
+
+  if (submitted) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-indigo-50 to-purple-50 flex items-center justify-center p-4">
+        <div className="bg-white rounded-2xl shadow-xl p-8 max-w-md text-center">
+          <div className="text-6xl mb-4">✅</div>
+          <h2 className="text-2xl font-bold text-gray-800 mb-2">提交成功！</h2>
+          <p className="text-gray-600 mb-4">
+            感谢您的投递，我们会尽快审核并与您联系。
           </p>
-        </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
+          <button
+            onClick={() => {
+              setSubmitted(false)
+              setSelectedJob(null)
+              setFormData({ name: '', email: '', phone: '', notes: '' })
+              setResumeFile(null)
+            }}
+            className="text-indigo-600 hover:text-indigo-800 font-medium"
           >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
+            投递更多岗位
+          </button>
         </div>
-      </main>
+      </div>
+    )
+  }
+
+  if (selectedJob) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-indigo-50 to-purple-50 p-4 md:p-8">
+        <div className="max-w-3xl mx-auto">
+          <button
+            onClick={() => setSelectedJob(null)}
+            className="mb-6 text-indigo-600 hover:text-indigo-800 font-medium flex items-center gap-2"
+          >
+            ← 返回岗位列表
+          </button>
+
+          <div className="bg-white rounded-2xl shadow-xl p-6 mb-6">
+            <h2 className="text-2xl font-bold text-gray-800 mb-2">
+              {selectedJob.title}
+            </h2>
+            {selectedJob.titleChinese && (
+              <p className="text-lg text-gray-600 mb-2">{selectedJob.titleChinese}</p>
+            )}
+            <p className="text-lg text-gray-600 mb-4">
+              {selectedJob.company} • {selectedJob.location}
+            </p>
+            <div className="flex flex-wrap gap-2 mb-4">
+              {selectedJob.department && (
+                <span className="px-3 py-1 bg-blue-100 text-blue-700 rounded-full text-sm">
+                  {selectedJob.department}
+                </span>
+              )}
+              {selectedJob.jobType && (
+                <span className="px-3 py-1 bg-green-100 text-green-700 rounded-full text-sm">
+                  {selectedJob.jobType}
+                </span>
+              )}
+              {selectedJob.publishDate && (
+                <span className="px-3 py-1 bg-gray-100 text-gray-600 rounded-full text-sm">
+                  {selectedJob.publishDate}
+                </span>
+              )}
+              {selectedJob.tags.map(tag => (
+                <span key={tag} className="px-3 py-1 bg-indigo-100 text-indigo-700 rounded-full text-sm">
+                  {tag}
+                </span>
+              ))}
+            </div>
+          </div>
+
+          {/* Job Description */}
+          {(selectedJob.jobDescription || selectedJob.requirements) && (
+            <div className="bg-white rounded-2xl shadow-xl p-6 mb-6">
+              <h3 className="text-xl font-bold text-gray-800 mb-4">📋 岗位职责 & 要求</h3>
+              
+              {selectedJob.jobDescription && (
+                <div className="mb-6">
+                  <h4 className="text-lg font-semibold text-gray-700 mb-2">What You'll Do</h4>
+                  <div className="text-gray-600 whitespace-pre-line text-sm leading-relaxed">
+                    {selectedJob.jobDescription}
+                  </div>
+                </div>
+              )}
+              
+              {selectedJob.requirements && (
+                <div className="mb-4">
+                  <h4 className="text-lg font-semibold text-gray-700 mb-2">Requirements</h4>
+                  <div className="text-gray-600 whitespace-pre-line text-sm leading-relaxed">
+                    {selectedJob.requirements}
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* About Us */}
+          {selectedJob.aboutUs && (
+            <div className="bg-white rounded-2xl shadow-xl p-6 mb-6">
+              <h3 className="text-xl font-bold text-gray-800 mb-4">🏢 About Us</h3>
+              <div className="text-gray-600 whitespace-pre-line text-sm leading-relaxed">
+                {selectedJob.aboutUs}
+              </div>
+            </div>
+          )}
+
+          <form onSubmit={handleSubmit} className="bg-white rounded-2xl shadow-xl p-6 space-y-4">
+            <h3 className="text-xl font-bold text-gray-800 mb-4">📝 提交简历</h3>
+            
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                姓名 *
+              </label>
+              <input
+                type="text"
+                required
+                value={formData.name}
+                onChange={e => setFormData({ ...formData, name: e.target.value })}
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                placeholder="请输入姓名"
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                邮箱 *
+              </label>
+              <input
+                type="email"
+                required
+                value={formData.email}
+                onChange={e => setFormData({ ...formData, email: e.target.value })}
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                placeholder="请输入邮箱"
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                电话
+              </label>
+              <input
+                type="tel"
+                value={formData.phone}
+                onChange={e => setFormData({ ...formData, phone: e.target.value })}
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                placeholder="请输入电话"
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                简历文件 *
+              </label>
+              <input
+                type="file"
+                required
+                accept=".pdf,.doc,.docx"
+                onChange={e => setResumeFile(e.target.files?.[0] || null)}
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500"
+              />
+              <p className="text-xs text-gray-500 mt-1">支持 PDF、DOC、DOCX 格式</p>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                备注
+              </label>
+              <textarea
+                value={formData.notes}
+                onChange={e => setFormData({ ...formData, notes: e.target.value })}
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                rows={3}
+                placeholder="想说的话或补充信息"
+              />
+            </div>
+
+            <button
+              type="submit"
+              disabled={submitting}
+              className="w-full py-3 bg-indigo-600 hover:bg-indigo-700 disabled:bg-gray-400 text-white font-semibold rounded-lg transition-colors"
+            >
+              {submitting ? '提交中...' : '提交申请'}
+            </button>
+          </form>
+        </div>
+      </div>
+    )
+  }
+
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-indigo-50 to-purple-50 p-4 md:p-8">
+      <div className="max-w-4xl mx-auto">
+        <header className="text-center mb-12">
+          <h1 className="text-4xl font-bold text-gray-800 mb-2">
+            🎯 Bitget 招聘投递
+          </h1>
+          <p className="text-gray-600">
+            选择你感兴趣的岗位，一键投递简历
+          </p>
+        </header>
+
+        {loading ? (
+          <div className="text-center py-12">
+            <p className="text-gray-500">加载中...</p>
+          </div>
+        ) : (
+          <div className="grid gap-4">
+            {jobs.map(job => (
+              <div
+                key={job.id}
+                className="bg-white rounded-xl shadow-md p-6 hover:shadow-lg transition-shadow cursor-pointer"
+                onClick={() => setSelectedJob(job)}
+              >
+                <div className="flex flex-col md:flex-row md:justify-between md:items-start">
+                  <div className="flex-1">
+                    <h3 className="text-xl font-bold text-gray-800 mb-1">
+                      {job.title}
+                    </h3>
+                    <p className="text-gray-600 mb-2">
+                      {job.company} • {job.location}
+                    </p>
+                    <div className="flex flex-wrap gap-2 mb-3">
+                      {job.department && (
+                        <span className="px-2 py-1 bg-blue-100 text-blue-700 rounded text-xs">
+                          {job.department}
+                        </span>
+                      )}
+                      {job.jobType && (
+                        <span className="px-2 py-1 bg-green-100 text-green-700 rounded text-xs">
+                          {job.jobType}
+                        </span>
+                      )}
+                      {job.publishDate && (
+                        <span className="px-2 py-1 bg-gray-100 text-gray-500 rounded text-xs">
+                          {job.publishDate}
+                        </span>
+                      )}
+                      {job.tags.map(tag => (
+                        <span key={tag} className="px-2 py-1 bg-gray-100 text-gray-600 rounded text-sm">
+                          {tag}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                  <button className="mt-4 md:mt-0 px-6 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-medium rounded-lg transition-colors">
+                    投递
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+
+        <footer className="mt-12 text-center text-gray-500 text-sm">
+          <p>💡 共 {jobs.length} 个岗位</p>
+        </footer>
+      </div>
     </div>
-  );
+  )
 }
