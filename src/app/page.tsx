@@ -421,7 +421,23 @@ export default function Home() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-indigo-50 to-purple-50 p-4 md:p-8">
+    <div className="min-h-screen bg-gradient-to-br from-indigo-50 to-purple-50 p-4 md:p-8 relative overflow-hidden">
+      {/* 跑动的小猫动画 */}
+      <div className="fixed bottom-0 left-0 right-0 pointer-events-none z-50" style={{ height: '60px', overflow: 'hidden' }}>
+        <style jsx>{`
+          @keyframes run {
+            0% { transform: translateX(-100%); }
+            100% { transform: translateX(calc(100vw + 100%)); }
+          }
+          .running-cat {
+            animation: run 15s linear infinite;
+          }
+        `}</style>
+        <div className="running-cat text-4xl" style={{ position: 'absolute', bottom: '10px' }}>
+          🐱
+        </div>
+      </div>
+      
       <div className="max-w-4xl mx-auto">
         <header className="text-center mb-8">
           <h1 className="text-4xl font-bold text-gray-800 mb-2">
