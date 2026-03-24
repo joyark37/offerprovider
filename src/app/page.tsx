@@ -3,19 +3,19 @@
 import { useState, useEffect, useMemo } from 'react'
 import { type Job } from '@/lib/types'
 
-// 岗位类别映射
+// 岗位类别映射 - 更精确的匹配
 const JOB_CATEGORIES = [
   { id: 'all', name: '全部' },
-  { id: 'product', name: '产品', keywords: ['产品', 'Product', 'PM'] },
-  { id: 'frontend', name: '前端', keywords: ['前端', 'Front-end', 'Frontend', 'React', 'Vue', 'Flutter', 'iOS', 'Android', 'Android'] },
-  { id: 'backend', name: '后端', keywords: ['后端', 'Back-end', 'Backend', 'Java', 'Go', 'Node', 'Engineer', '开发'] },
-  { id: 'design', name: '设计', keywords: ['设计', 'Design', 'UI', 'UX', '视觉', '美术'] },
-  { id: 'operation', name: '运营', keywords: ['运营', 'Operation', '客服', 'CS'] },
-  { id: 'marketing', name: '市场', keywords: ['市场', 'Marketing', '商务', 'BD', '增长', 'Growth'] },
-  { id: 'data', name: '数据', keywords: ['数据', 'Data', '分析', 'Analyst', '风控', 'Risk'] },
-  { id: 'legal', name: '合规', keywords: ['合规', 'Compliance', '法务', 'Legal', 'License'] },
-  { id: 'finance', name: '财务', keywords: ['财务', 'Finance', '会计', 'Accounting', '税务'] },
-  { id: 'hr', name: 'HR', keywords: ['HR', '人力资源', '招聘', 'Recruit'] },
+  { id: 'product', name: '产品', keywords: ['产品经理', 'Product Manager', '产品', 'PM', 'Product Owner', 'Product Lead'] },
+  { id: 'frontend', name: '前端', keywords: ['前端', 'Front-end', 'Frontend', 'React', 'Vue', 'Flutter', 'iOS', 'Android', 'Android开发', 'FE', 'Web开发'] },
+  { id: 'backend', name: '后端', keywords: ['后端', 'Back-end', 'Backend', 'Java', 'Go', 'Node.js', 'Python', 'Golang', 'Engineer', '开发工程师', '服务端'] },
+  { id: 'design', name: '设计', keywords: ['设计', 'Design', 'UI', 'UX', '视觉', '美术', 'Designer', '插画', '动效'] },
+  { id: 'operation', name: '运营', keywords: ['运营', 'Operation', '客服', 'CS', '客服', '客户运营', '社群运营'] },
+  { id: 'marketing', name: '市场', keywords: ['市场', 'Marketing', '商务', 'BD', '增长', 'Growth', '推广', '品牌', 'PR'] },
+  { id: 'data', name: '数据', keywords: ['数据', 'Data', '分析', 'Analyst', '风控', 'Risk', '算法', 'AI', '机器学习'] },
+  { id: 'legal', name: '合规', keywords: ['合规', 'Compliance', '法务', 'Legal', 'License', '律师', '监管'] },
+  { id: 'finance', name: '财务', keywords: ['财务', 'Finance', '会计', 'Accounting', '税务', '金融', '资金'] },
+  { id: 'hr', name: 'HR', keywords: ['HR', '人力资源', '招聘', 'Recruit', '人才', '员工关系'] },
 ]
 
 // 职级筛选
@@ -85,16 +85,20 @@ export default function Home() {
         if (!matchTitle && !matchDept && !matchDesc) return false
       }
       
-      // 类别筛选
+      // 类别筛选 - 优先匹配 title，再匹配 department
       if (selectedCategory !== 'all') {
         const category = JOB_CATEGORIES.find(c => c.id === selectedCategory)
         if (category && category.keywords) {
-          const match = category.keywords.some(kw => 
-            job.title.toLowerCase().includes(kw.toLowerCase()) ||
-            job.department?.toLowerCase().includes(kw.toLowerCase()) ||
-            job.jobDescription?.toLowerCase().includes(kw.toLowerCase())
+          // 先在 title 中精确匹配
+          const titleMatch = category.keywords.some(kw => 
+            job.title.toLowerCase().includes(kw.toLowerCase())
           )
-          if (!match) return false
+          // 再在 department 中匹配
+          const deptMatch = category.keywords.some(kw => 
+            job.department?.toLowerCase().includes(kw.toLowerCase())
+          )
+          // title 或 department 匹配即可
+          if (!titleMatch && !deptMatch) return false
         }
       }
       
