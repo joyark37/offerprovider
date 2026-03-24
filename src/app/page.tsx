@@ -1,7 +1,32 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { type Job } from '@/lib/types'
+
+// 岗位类别映射
+const JOB_CATEGORIES = [
+  { id: 'all', name: '全部' },
+  { id: 'product', name: '产品', keywords: ['产品', 'Product', 'PM'] },
+  { id: 'frontend', name: '前端', keywords: ['前端', 'Front-end', 'Frontend', 'React', 'Vue', 'Flutter', 'iOS', 'Android', 'Android'] },
+  { id: 'backend', name: '后端', keywords: ['后端', 'Back-end', 'Backend', 'Java', 'Go', 'Node', 'Engineer', '开发'] },
+  { id: 'design', name: '设计', keywords: ['设计', 'Design', 'UI', 'UX', '视觉', '美术'] },
+  { id: 'operation', name: '运营', keywords: ['运营', 'Operation', '客服', 'CS'] },
+  { id: 'marketing', name: '市场', keywords: ['市场', 'Marketing', '商务', 'BD', '增长', 'Growth'] },
+  { id: 'data', name: '数据', keywords: ['数据', 'Data', '分析', 'Analyst', '风控', 'Risk'] },
+  { id: 'legal', name: '合规', keywords: ['合规', 'Compliance', '法务', 'Legal', 'License'] },
+  { id: 'finance', name: '财务', keywords: ['财务', 'Finance', '会计', 'Accounting', '税务'] },
+  { id: 'hr', name: 'HR', keywords: ['HR', '人力资源', '招聘', 'Recruit'] },
+]
+
+// 职级筛选
+const JOB_LEVELS = [
+  { id: 'all', name: '全部' },
+  { id: 'intern', name: '实习', keywords: ['Intern', '实习'] },
+  { id: 'junior', name: '初级', keywords: ['Junior', '初级', '专员的'] },
+  { id: 'senior', name: '高级', keywords: ['Senior', '高级', '资深'] },
+  { id: 'lead', name: '负责人', keywords: ['Lead', 'Manager', '负责人', '主管'] },
+  { id: 'head', name: '总监', keywords: ['Head', 'Director', '总监', 'VP'] },
+]
 
 export default function Home() {
   const [jobs, setJobs] = useState<Job[]>([])
@@ -9,6 +34,12 @@ export default function Home() {
   const [selectedJob, setSelectedJob] = useState<Job | null>(null)
   const [submitted, setSubmitted] = useState(false)
   const [submitting, setSubmitting] = useState(false)
+  
+  // 筛选状态
+  const [searchQuery, setSearchQuery] = useState('')
+  const [selectedCategory, setSelectedCategory] = useState('all')
+  const [selectedLevel, setSelectedLevel] = useState('all')
+  
   const [formData, setFormData] = useState({
     name: '',
     email: '',
@@ -28,6 +59,46 @@ export default function Home() {
       .catch(console.error)
       .finally(() => setLoading(false))
   }, [])
+
+  // 筛选逻辑
+  const filteredJobs = useMemo(() => {
+    return jobs.filter(job => {
+      // 搜索匹配
+      if (searchQuery) {
+        const query = searchQuery.toLowerCase()
+        const matchTitle = job.title.toLowerCase().includes(query)
+        const matchDept = job.department?.toLowerCase().includes(query)
+        const matchDesc = job.jobDescription?.toLowerCase().includes(query) || job.requirements?.toLowerCase().includes(query)
+        if (!matchTitle && !matchDept && !matchDesc) return false
+      }
+      
+      // 类别筛选
+      if (selectedCategory !== 'all') {
+        const category = JOB_CATEGORIES.find(c => c.id === selectedCategory)
+        if (category) {
+          const match = category.keywords.some(kw => 
+            job.title.toLowerCase().includes(kw.toLowerCase()) ||
+            job.department?.toLowerCase().includes(kw.toLowerCase()) ||
+            job.jobDescription?.toLowerCase().includes(kw.toLowerCase())
+          )
+          if (!match) return false
+        }
+      }
+      
+      // 职级筛选
+      if (selectedLevel !== 'all') {
+        const level = JOB_LEVELS.find(l => l.id === selectedLevel)
+        if (level) {
+          const match = level.keywords.some(kw => 
+            job.title.toLowerCase().includes(kw.toLowerCase())
+          )
+          if (!match) return false
+        }
+      }
+      
+      return true
+    })
+  }, [jobs, searchQuery, selectedCategory, selectedLevel])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -299,7 +370,7 @@ export default function Home() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-indigo-50 to-purple-50 p-4 md:p-8">
       <div className="max-w-4xl mx-auto">
-        <header className="text-center mb-12">
+        <header className="text-center mb-8">
           <h1 className="text-4xl font-bold text-gray-800 mb-2">
             🎯 热门岗位投递
           </h1>
@@ -308,13 +379,93 @@ export default function Home() {
           </p>
         </header>
 
+        {/* 搜索和筛选区域 */}
+        <div className="bg-white rounded-xl shadow-md p-4 mb-6">
+          {/* 搜索框 */}
+          <div className="mb-4">
+            <input
+              type="text"
+              placeholder="🔍 搜索岗位名称、部门、技能..."
+              value={searchQuery}
+              onChange={e => setSearchQuery(e.target.value)}
+              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+            />
+          </div>
+          
+          {/* 筛选器 */}
+          <div className="flex flex-col md:flex-row gap-4">
+            {/* 岗位类别 */}
+            <div className="flex-1">
+              <label className="block text-sm font-medium text-gray-700 mb-2">岗位类别</label>
+              <div className="flex flex-wrap gap-2">
+                {JOB_CATEGORIES.map(cat => (
+                  <button
+                    key={cat.id}
+                    onClick={() => setSelectedCategory(cat.id)}
+                    className={`px-3 py-1.5 rounded-full text-sm font-medium transition-colors ${
+                      selectedCategory === cat.id
+                        ? 'bg-indigo-600 text-white'
+                        : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                    }`}
+                  >
+                    {cat.name}
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
+          
+          <div className="flex flex-col md:flex-row gap-4 mt-4">
+            {/* 职级 */}
+            <div className="flex-1">
+              <label className="block text-sm font-medium text-gray-700 mb-2">职级</label>
+              <div className="flex flex-wrap gap-2">
+                {JOB_LEVELS.map(level => (
+                  <button
+                    key={level.id}
+                    onClick={() => setSelectedLevel(level.id)}
+                    className={`px-3 py-1.5 rounded-full text-sm font-medium transition-colors ${
+                      selectedLevel === level.id
+                        ? 'bg-purple-600 text-white'
+                        : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                    }`}
+                  >
+                    {level.name}
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
+          
+          {/* 搜索结果计数 */}
+          <div className="mt-4 pt-4 border-t border-gray-200">
+            <p className="text-sm text-gray-500">
+              {loading ? '加载中...' : `找到 <span class="font-semibold text-indigo-600">${filteredJobs.length}</span> 个岗位${searchQuery || selectedCategory !== 'all' || selectedLevel !== 'all' ? '（已筛选）' : ''}`}
+            </p>
+          </div>
+        </div>
+
         {loading ? (
           <div className="text-center py-12">
             <p className="text-gray-500">加载中...</p>
           </div>
+        ) : filteredJobs.length === 0 ? (
+          <div className="text-center py-12 bg-white rounded-xl shadow-md">
+            <p className="text-gray-500 mb-4">没有找到匹配的岗位</p>
+            <button
+              onClick={() => {
+                setSearchQuery('')
+                setSelectedCategory('all')
+                setSelectedLevel('all')
+              }}
+              className="text-indigo-600 hover:text-indigo-800 font-medium"
+            >
+              清除筛选条件
+            </button>
+          </div>
         ) : (
           <div className="grid gap-4">
-            {jobs.map(job => (
+            {filteredJobs.map(job => (
               <div
                 key={job.id}
                 className="bg-white rounded-xl shadow-md p-6 hover:shadow-lg transition-shadow cursor-pointer"
