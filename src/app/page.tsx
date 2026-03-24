@@ -50,6 +50,16 @@ export default function Home() {
   })
   const [resumeFile, setResumeFile] = useState<File | null>(null)
 
+  // 滚动到岗位职责部分
+  useEffect(() => {
+    if (selectedJob) {
+      const timer = setTimeout(() => {
+        document.getElementById('job-description')?.scrollIntoView({ behavior: 'smooth' })
+      }, 100)
+      return () => clearTimeout(timer)
+    }
+  }, [selectedJob])
+
   useEffect(() => {
     fetch('/api/jobs')
       .then(res => res.json())
@@ -264,7 +274,7 @@ export default function Home() {
 
           {/* Job Description */}
           {(selectedJob.jobDescription || selectedJob.requirements) && (
-            <div className="bg-white rounded-2xl shadow-xl p-6 mb-6">
+            <div id="job-description" className="bg-white rounded-2xl shadow-xl p-6 mb-6">
               <h3 className="text-xl font-bold text-gray-800 mb-4">📋 岗位职责 & 要求</h3>
               
               {selectedJob.jobDescription && (
