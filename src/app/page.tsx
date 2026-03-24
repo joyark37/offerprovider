@@ -75,7 +75,7 @@ export default function Home() {
       // 类别筛选
       if (selectedCategory !== 'all') {
         const category = JOB_CATEGORIES.find(c => c.id === selectedCategory)
-        if (category) {
+        if (category && category.keywords) {
           const match = category.keywords.some(kw => 
             job.title.toLowerCase().includes(kw.toLowerCase()) ||
             job.department?.toLowerCase().includes(kw.toLowerCase()) ||
@@ -88,7 +88,7 @@ export default function Home() {
       // 职级筛选
       if (selectedLevel !== 'all') {
         const level = JOB_LEVELS.find(l => l.id === selectedLevel)
-        if (level) {
+        if (level && level.keywords) {
           const match = level.keywords.some(kw => 
             job.title.toLowerCase().includes(kw.toLowerCase())
           )
