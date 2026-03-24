@@ -39,6 +39,8 @@ export default function Home() {
   const [searchQuery, setSearchQuery] = useState('')
   const [selectedCategory, setSelectedCategory] = useState('all')
   const [selectedLevel, setSelectedLevel] = useState('all')
+  const [currentPage, setCurrentPage] = useState(1)
+  const ITEMS_PER_PAGE = 50
   
   const [formData, setFormData] = useState({
     name: '',
@@ -99,6 +101,18 @@ export default function Home() {
       return true
     })
   }, [jobs, searchQuery, selectedCategory, selectedLevel])
+
+  // 分页
+  const totalPages = Math.ceil(filteredJobs.length / ITEMS_PER_PAGE)
+  const paginatedJobs = useMemo(() => {
+    const start = (currentPage - 1) * ITEMS_PER_PAGE
+    return filteredJobs.slice(start, start + ITEMS_PER_PAGE)
+  }, [filteredJobs, currentPage])
+
+  // 重置页码当筛选条件变化时
+  useEffect(() => {
+    setCurrentPage(1)
+  }, [searchQuery, selectedCategory, selectedLevel])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -436,20 +450,13 @@ export default function Home() {
               </div>
             </div>
           </div>
-          
-          {/* 搜索结果计数 */}
-          <div className="mt-4 pt-4 border-t border-gray-200">
-            <p className="text-sm text-gray-500">
-              {loading ? '加载中...' : `找到 <span class="font-semibold text-indigo-600">${filteredJobs.length}</span> 个岗位${searchQuery || selectedCategory !== 'all' || selectedLevel !== 'all' ? '（已筛选）' : ''}`}
-            </p>
-          </div>
         </div>
 
         {loading ? (
           <div className="text-center py-12">
             <p className="text-gray-500">加载中...</p>
           </div>
-        ) : filteredJobs.length === 0 ? (
+        ) : paginatedJobs.length === 0 ? (
           <div className="text-center py-12 bg-white rounded-xl shadow-md">
             <p className="text-gray-500 mb-4">没有找到匹配的岗位</p>
             <button
@@ -465,7 +472,7 @@ export default function Home() {
           </div>
         ) : (
           <div className="grid gap-4">
-            {filteredJobs.map(job => (
+            {paginatedJobs.map(job => (
               <div
                 key={job.id}
                 className="bg-white rounded-xl shadow-md p-6 hover:shadow-lg transition-shadow cursor-pointer"
@@ -511,8 +518,36 @@ export default function Home() {
           </div>
         )}
 
-        <footer className="mt-12 text-center text-gray-500 text-sm">
-          <p>💡 共 {jobs.length} 个岗位</p>
+        {/* 分页 */}
+        {totalPages > 1 && (
+          <div className="mt-8 flex justify-center items-center gap-2">
+            <button
+              onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+              disabled={currentPage === 1}
+              className="px-4 py-2 bg-white border border-gray-300 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50"
+            >
+              上一页
+            </button>
+            <span className="px-4 py-2 text-gray-600">
+              第 {currentPage} / {totalPages} 页
+            </span>
+            <button
+              onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+              disabled={currentPage === totalPages}
+              className="px-4 py-2 bg-white border border-gray-300 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50"
+            >
+              下一页
+            </button>
+          </div>
+        )}
+
+        <footer className="mt-8 text-center text-gray-500 text-sm">
+          <p>
+            💡 共 {jobs.length} 个岗位 
+            {(searchQuery || selectedCategory !== 'all' || selectedLevel !== 'all') && (
+              <span className="ml-2">| 筛选后 {filteredJobs.length} 个</span>
+            )}
+          </p>
         </footer>
       </div>
     </div>
