@@ -9,6 +9,8 @@ export interface Job {
   aboutUs: string
   jobDescription: string
   requirements: string
+  translatedWhatYoullDo?: string
+  translatedRequirements?: string
   publishDate: string
   link: string
   tags: string[]

@@ -287,24 +287,24 @@ export default function Home() {
           </div>
 
           {/* Job Description */}
-          {(selectedJob.jobDescription || selectedJob.requirements) && (
+          {(selectedJob.jobDescription || selectedJob.translatedWhatYoullDo || selectedJob.requirements || selectedJob.translatedRequirements) && (
             <div id="job-description" className="bg-white rounded-2xl shadow-xl p-6 mb-6">
               <h3 className="text-xl font-bold text-gray-800 mb-4">📋 岗位职责 & 要求</h3>
               
-              {selectedJob.jobDescription && (
+              {(selectedJob.translatedWhatYoullDo || selectedJob.jobDescription) && (
                 <div className="mb-6">
-                  <h4 className="text-lg font-semibold text-gray-700 mb-2">What You'll Do</h4>
+                  <h4 className="text-lg font-semibold text-gray-700 mb-2">岗位职责</h4>
                   <div className="text-gray-600 whitespace-pre-line text-sm leading-relaxed">
-                    {selectedJob.jobDescription}
+                    {selectedJob.translatedWhatYoullDo || selectedJob.jobDescription}
                   </div>
                 </div>
               )}
               
-              {selectedJob.requirements && (
+              {(selectedJob.translatedRequirements || selectedJob.requirements) && (
                 <div className="mb-4">
-                  <h4 className="text-lg font-semibold text-gray-700 mb-2">Requirements</h4>
+                  <h4 className="text-lg font-semibold text-gray-700 mb-2">任职要求</h4>
                   <div className="text-gray-600 whitespace-pre-line text-sm leading-relaxed">
-                    {selectedJob.requirements}
+                    {selectedJob.translatedRequirements || selectedJob.requirements}
                   </div>
                 </div>
               )}
