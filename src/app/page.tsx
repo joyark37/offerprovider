@@ -423,18 +423,60 @@ export default function Home() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-indigo-50 to-purple-50 p-4 md:p-8 relative overflow-hidden">
       {/* 跑动的小猫动画 */}
-      <div className="fixed bottom-0 left-0 right-0 pointer-events-none z-50" style={{ height: '60px', overflow: 'hidden' }}>
+      <div className="fixed bottom-0 left-0 right-0 pointer-events-none z-50" style={{ height: '80px' }}>
         <style jsx>{`
-          @keyframes run {
-            0% { transform: translateX(-100%); }
-            100% { transform: translateX(calc(100vw + 100%)); }
+          @keyframes catWalk {
+            0% { transform: translateX(-150px) translateY(0) scaleX(1); }
+            25% { transform: translateX(25vw) translateY(-5px) scaleX(1); }
+            50% { transform: translateX(50vw) translateY(0) scaleX(1); }
+            75% { transform: translateX(75vw) translateY(-5px) scaleX(1); }
+            100% { transform: translateX(calc(100vw + 150px)) translateY(0) scaleX(1); }
           }
-          .running-cat {
-            animation: run 15s linear infinite;
+          @keyframes catTail {
+            0%, 100% { transform: rotate(-5deg); }
+            50% { transform: rotate(5deg); }
+          }
+          .cat-container {
+            animation: catWalk 12s linear infinite;
+          }
+          .cat-tail {
+            animation: catTail 0.3s ease-in-out infinite;
+            transform-origin: bottom center;
           }
         `}</style>
-        <div className="running-cat text-4xl" style={{ position: 'absolute', bottom: '10px' }}>
-          🐱
+        <div className="cat-container" style={{ position: 'absolute', bottom: '15px', left: 0 }}>
+          <div style={{ position: 'relative', width: '120px', height: '60px' }}>
+            {/* 猫咪身体 - 使用 SVG */}
+            <svg width="120" height="60" viewBox="0 0 120 60" fill="none" xmlns="http://www.w3.org/2000/svg">
+              {/* 身体 */}
+              <ellipse cx="60" cy="40" rx="35" ry="18" fill="#F5E6D3"/>
+              <ellipse cx="60" cy="40" rx="32" ry="15" fill="#FFE4C9"/>
+              {/* 头部 */}
+              <circle cx="95" cy="32" r="18" fill="#F5E6D3"/>
+              <circle cx="95" cy="32" r="16" fill="#FFE4C9"/>
+              {/* 耳朵 */}
+              <polygon points="82,20 88,8 95,22" fill="#F5E6D3"/>
+              <polygon points="98,22 105,8 108,22" fill="#F5E6D3"/>
+              <polygon points="84,20 88,12 93,22" fill="#FFB6C1"/>
+              <polygon points="100,22 105,12 110,22" fill="#FFB6C1"/>
+              {/* 眼睛 */}
+              <ellipse cx="100" cy="30" rx="3" ry="4" fill="#333"/>
+              <ellipse cx="106" cy="30" rx="3" ry="4" fill="#333"/>
+              <circle cx="101" cy="29" r="1" fill="#FFF"/>
+              <circle cx="107" cy="29" r="1" fill="#FFF"/>
+              {/* 鼻子 */}
+              <polygon points="103,35 100,38 106,38" fill="#FFB6C1"/>
+              {/* 嘴巴 */}
+              <path d="M100 38 Q103 41 106 38" stroke="#333" strokeWidth="1" fill="none"/>
+              {/* 尾巴 */}
+              <path d="M25 40 Q10 35 5 25 Q0 15 10 20" stroke="#F5E6D3" strokeWidth="8" fill="none" strokeLinecap="round"/>
+              {/* 腿 */}
+              <ellipse cx="40" cy="55" rx="6" ry="4" fill="#F5E6D3"/>
+              <ellipse cx="55" cy="55" rx="6" ry="4" fill="#F5E6D3"/>
+              <ellipse cx="70" cy="55" rx="6" ry="4" fill="#F5E6D3"/>
+              <ellipse cx="85" cy="55" rx="6" ry="4" fill="#F5E6D3"/>
+            </svg>
+          </div>
         </div>
       </div>
       
