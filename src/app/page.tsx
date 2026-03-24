@@ -165,7 +165,14 @@ export default function Home() {
     setFormErrors({})
     setSubmitting(true)
     
+    if (!selectedJob) {
+      return
+    }
+    
     try {
+      if (!resumeFile) {
+        return
+      }
       const reader = new FileReader()
       const fileBase64 = await new Promise<string>((resolve, reject) => {
         reader.onload = () => {
@@ -174,7 +181,7 @@ export default function Home() {
           resolve(base64)
         }
         reader.onerror = reject
-        reader.readAsDataURL(resumeFile)
+        reader.readAsDataURL(resumeFile as Blob)
       })
 
       const response = await fetch('/api/submit', {
