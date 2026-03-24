@@ -1,7 +1,31 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { S3Client, PutObjectCommand } from '@aws-sdk/client-s3'
+import { Upload } from '@aws-sdk/lib-storage'
 
 // Feishu webhook URL - configure in Vercel project settings
 const FEISHU_WEBHOOK_URL = process.env.FEISHU_WEBHOOK_URL
+
+// Cloudflare R2 config - configure in Vercel project settings
+const R2_ENDPOINT = process.env.R2_ENDPOINT
+const R2_ACCESS_KEY_ID = process.env.R2_ACCESS_KEY_ID
+const R2_SECRET_ACCESS_KEY = process.env.R2_SECRET_ACCESS_KEY
+const R2_BUCKET_NAME = process.env.R2_BUCKET_NAME
+const R2_PUBLIC_URL = process.env.R2_PUBLIC_URL
+
+// Initialize R2 client if configured
+const getR2Client = () => {
+  if (!R2_ENDPOINT || !R2_ACCESS_KEY_ID || !R2_SECRET_ACCESS_KEY || !R2_BUCKET_NAME) {
+    return null
+  }
+  return new S3Client({
+    region: 'auto',
+    endpoint: R2_ENDPOINT,
+    credentials: {
+      accessKeyId: R2_ACCESS_KEY_ID,
+      secretAccessKey: R2_SECRET_ACCESS_KEY,
+    },
+  })
+}
 
 export async function POST(request: NextRequest) {
   try {
@@ -26,6 +50,39 @@ export async function POST(request: NextRequest) {
         { error: 'Missing required fields' },
         { status: 400 }
       )
+    }
+
+    let resumeUrl = ''
+
+    // Upload to R2 if configured
+    if (R2_ENDPOINT && R2_ACCESS_KEY_ID && R2_SECRET_ACCESS_KEY && R2_BUCKET_NAME) {
+      try {
+        const r2Client = getR2Client()
+        if (r2Client) {
+          const timestamp = Date.now()
+          const fileExt = resumeName.split('.').pop() || 'pdf'
+          const key = `resumes/${timestamp}-${name.replace(/[^a-zA-Z0-9]/g, '_')}.${fileExt}`
+          
+          const buffer = Buffer.from(resumeBase64, 'base64')
+          
+          const upload = new Upload({
+            client: r2Client,
+            params: {
+              Bucket: R2_BUCKET_NAME,
+              Key: key,
+              Body: buffer,
+              ContentType: resumeType || 'application/pdf',
+            },
+          })
+          
+          await upload.done()
+          resumeUrl = R2_PUBLIC_URL ? `${R2_PUBLIC_URL}/${key}` : `${R2_ENDPOINT}/${key}`
+          console.log('Resume uploaded to R2:', resumeUrl)
+        }
+      } catch (r2Error) {
+        console.error('R2 upload failed:', r2Error)
+        // Continue without resume URL
+      }
     }
 
     // Send to Feishu webhook if configured
@@ -82,7 +139,7 @@ export async function POST(request: NextRequest) {
             tag: 'div',
             text: {
               tag: 'lark_md',
-              content: `**简历:** ${resumeName}`
+              content: resumeUrl ? `**简历:** [下载简历](${resumeUrl})` : `**简历:** ${resumeName} (Base64编码，请联系管理员)`
             }
           }
         ]
@@ -104,7 +161,7 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    return NextResponse.json({ success: true })
+    return NextResponse.json({ success: true, resumeUrl })
   } catch (error) {
     console.error('Submit error:', error)
     return NextResponse.json(

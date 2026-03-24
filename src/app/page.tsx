@@ -33,6 +33,38 @@ export default function Home() {
     e.preventDefault()
     if (!selectedJob || !resumeFile) return
 
+    // 表单校验
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+    const phoneRegex = /^[\d\s\-+()]{7,20}$/
+    
+    if (!formData.name.trim() || formData.name.trim().length < 2) {
+      alert('请输入有效的姓名（至少2个字符）')
+      return
+    }
+    
+    if (!emailRegex.test(formData.email)) {
+      alert('请输入有效的邮箱地址')
+      return
+    }
+    
+    if (formData.phone && !phoneRegex.test(formData.phone)) {
+      alert('请输入有效的电话号码')
+      return
+    }
+    
+    // 文件大小校验 (最大 5MB)
+    if (resumeFile.size > 5 * 1024 * 1024) {
+      alert('简历文件大小不能超过 5MB')
+      return
+    }
+    
+    // 文件类型校验
+    const allowedTypes = ['application/pdf', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document']
+    if (!allowedTypes.includes(resumeFile.type)) {
+      alert('仅支持 PDF、DOC、DOCX 格式的简历')
+      return
+    }
+
     setSubmitting(true)
     
     try {
