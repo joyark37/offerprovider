@@ -49,6 +49,7 @@ export default function Home() {
     notes: ''
   })
   const [resumeFile, setResumeFile] = useState<File | null>(null)
+  const [formErrors, setFormErrors] = useState<Record<string, string>>({})
 
   // 滚动到岗位职责部分
   useEffect(() => {
@@ -126,40 +127,42 @@ export default function Home() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (!selectedJob || !resumeFile) return
-
+    
     // 表单校验
+    const errors: Record<string, string> = {}
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
     const phoneRegex = /^[\d\s\-+()]{7,20}$/
     
+    // 姓名校验
     if (!formData.name.trim() || formData.name.trim().length < 2) {
-      alert('请输入有效的姓名（至少2个字符）')
-      return
+      errors.name = '请输入有效的姓名（至少2个字符）'
     }
     
-    if (!emailRegex.test(formData.email)) {
-      alert('请输入有效的邮箱地址')
-      return
+    // 邮箱校验
+    if (!formData.email.trim() || !emailRegex.test(formData.email)) {
+      errors.email = '请输入有效的邮箱地址'
     }
     
+    // 电话校验（可选，如有填写需校验格式）
     if (formData.phone && !phoneRegex.test(formData.phone)) {
-      alert('请输入有效的电话号码')
+      errors.phone = '请输入有效的电话号码'
+    }
+    
+    // 简历校验
+    if (!resumeFile) {
+      errors.resume = '请上传简历文件'
+    } else if (resumeFile.size > 5 * 5 * 1024 * 1024) {
+      errors.resume = '简历文件大小不能超过 5MB'
+    } else if (!['application/pdf', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'].includes(resumeFile.type)) {
+      errors.resume = '仅支持 PDF、DOC、DOCX 格式'
+    }
+    
+    if (Object.keys(errors).length > 0) {
+      setFormErrors(errors)
       return
     }
     
-    // 文件大小校验 (最大 5MB)
-    if (resumeFile.size > 5 * 1024 * 1024) {
-      alert('简历文件大小不能超过 5MB')
-      return
-    }
-    
-    // 文件类型校验
-    const allowedTypes = ['application/pdf', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document']
-    if (!allowedTypes.includes(resumeFile.type)) {
-      alert('仅支持 PDF、DOC、DOCX 格式的简历')
-      return
-    }
-
+    setFormErrors({})
     setSubmitting(true)
     
     try {
@@ -318,10 +321,14 @@ export default function Home() {
                 type="text"
                 required
                 value={formData.name}
-                onChange={e => setFormData({ ...formData, name: e.target.value })}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                onChange={e => {
+                  setFormData({ ...formData, name: e.target.value })
+                  if (formErrors.name) setFormErrors({ ...formErrors, name: '' })
+                }}
+                className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent ${formErrors.name ? 'border-red-500' : 'border-gray-300'}`}
                 placeholder="请输入姓名"
               />
+              {formErrors.name && <p className="text-red-500 text-xs mt-1">{formErrors.name}</p>}
             </div>
 
             <div>
@@ -332,10 +339,14 @@ export default function Home() {
                 type="email"
                 required
                 value={formData.email}
-                onChange={e => setFormData({ ...formData, email: e.target.value })}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                onChange={e => {
+                  setFormData({ ...formData, email: e.target.value })
+                  if (formErrors.email) setFormErrors({ ...formErrors, email: '' })
+                }}
+                className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent ${formErrors.email ? 'border-red-500' : 'border-gray-300'}`}
                 placeholder="请输入邮箱"
               />
+              {formErrors.email && <p className="text-red-500 text-xs mt-1">{formErrors.email}</p>}
             </div>
 
             <div>
@@ -345,10 +356,14 @@ export default function Home() {
               <input
                 type="tel"
                 value={formData.phone}
-                onChange={e => setFormData({ ...formData, phone: e.target.value })}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                onChange={e => {
+                  setFormData({ ...formData, phone: e.target.value })
+                  if (formErrors.phone) setFormErrors({ ...formErrors, phone: '' })
+                }}
+                className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent ${formErrors.phone ? 'border-red-500' : 'border-gray-300'}`}
                 placeholder="请输入电话"
               />
+              {formErrors.phone && <p className="text-red-500 text-xs mt-1">{formErrors.phone}</p>}
             </div>
 
             <div>
@@ -359,10 +374,17 @@ export default function Home() {
                 type="file"
                 required
                 accept=".pdf,.doc,.docx"
-                onChange={e => setResumeFile(e.target.files?.[0] || null)}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500"
+                onChange={e => {
+                  setResumeFile(e.target.files?.[0] || null)
+                  if (formErrors.resume) setFormErrors({ ...formErrors, resume: '' })
+                }}
+                className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 ${formErrors.resume ? 'border-red-500' : 'border-gray-300'}`}
               />
               <p className="text-xs text-gray-500 mt-1">支持 PDF、DOC、DOCX 格式</p>
+              {formErrors.resume && <p className="text-red-500 text-xs mt-1">{formErrors.resume}</p>}
+              {resumeFile && !formErrors.resume && (
+                <p className="text-green-600 text-xs mt-1">✓ {resumeFile.name} ({(resumeFile.size / 1024).toFixed(1)} KB)</p>
+              )}
             </div>
 
             <div>
